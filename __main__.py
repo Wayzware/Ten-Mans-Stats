@@ -1,5 +1,7 @@
 import time
 
+import matplotlib.pyplot as ppl
+
 from faceit_data import FaceitData
 
 HUB_ID = "9ace3498-5c27-47a4-9d8b-59d10e0a19c5"
@@ -10,12 +12,13 @@ player_ids = {}
 hub_matches = {}
 player_final_stats = []
 DEBUG = False
-VERSION = "0.1b"
+VERSION = "0.2"
 
 
 class main():
     def __init__(self):
         print("10 Mans Stats Viewer v" + VERSION)
+        print("Created by Wayz")
         start_time = 1580082900
         end_time = 1589950800
         print("Initializing with season 1 data...") #does this so no null errors occur
@@ -27,64 +30,93 @@ class main():
         global DEBUG
         print('Type "?" for a list of commands')
         while (True):
-            command = input(">>> ").split()
-            if (len(command) == 0):
-                print("Please enter a command")
-            elif(command[0] == "top"):
-                if((len(command) == 2) and (command[1] == "?")):
-                    print("Stats currently supported: assists*, deaths*, headshots*, KDR, KRR, kills*, mvps*, aces*, four_kill_rounds*, three_kill_rounds*")
-                    print("""* indicates that you can add "_r" to the stat to get the average per round instead of per game""")
-                elif(len(command) == 4 and self.stat_exists(command[1]) and int(command[2]) > 0):
-                    ret_top_array = self.top(command[1], int(command[2]), int(command[3]))
-                    print(command[1] + " ranking:")
-                    print("-----------------")
-                    z = 1
-                    for element in ret_top_array:
-                        print(str(z) + ". " + element)
-                        z += 1
-                else:
-                    if((len(command) > 1) and not (self.stat_exists(command[1]))):
-                        print('Stat does not exist. Type "top ?" for a list of supported stats')
-                    else: print("Usage: top <stat> <len> <min_games>")
-            elif (command[0] == "debug"):
-                if (command[1] == "1"):
-                    DEBUG = True
-                elif (command[1] == "0"):
-                    DEBUG = False
-                else:
-                    print("Usage: debug <0 or 1>")
-            elif (command[0] == "exit"):
-                exit(0)
-            elif (command[0] == "time"):
-                if (len(command) == 2):
-                    if (command[1] == "s1"):
-                        self.File_Handler(1580082900, 1589950800)
-                        self.calculate_player_stats()
+            try:
+                command = input(">>> ").split()
+                if (len(command) == 0):
+                    print("Please enter a command")
+                elif(command[0] == "top"):
+                    if((len(command) == 2) and (command[1] == "?")):
+                        self.print_stats_list()
+                    elif(len(command) == 4 and self.stat_exists(command[1]) and int(command[2]) > 0):
+                        ret_top_array = self.top(command[1], int(command[2]), int(command[3]))
+                        stat = command[1].capitalize()
+                        print(stat + " ranking:")
+                        print("-----------------")
+                        z = 1
+                        for element in ret_top_array:
+                            print(str(z) + ". " + element)
+                            z += 1
                     else:
-                        print('"' + command[1] + '" is not a valid season')
-                elif (len(command) == 3):
-                    if (int(command[1]) >= 0 and int(command[2]) > int(command[1])):
-                        self.File_Handler(int(command[1]), int(command[2]))
-                        self.calculate_player_stats()
+                        if((len(command) > 1) and not (self.stat_exists(command[1]))):
+                            print('Stat does not exist. Type "top ?" for a list of supported stats')
+                        else: print("Usage: top <stat> <len> <min_games>")
+                elif (command[0] == "debug"): #not listed in ? menu
+                    if (command[1] == "1"):
+                        DEBUG = True
+                    elif (command[1] == "0"):
+                        DEBUG = False
                     else:
-                        print("start_time and end_time must be valid Unix Time integers")
+                        print("Usage: debug <0 or 1>")
+                elif (command[0] == "exit"):
+                    exit(0)
+                elif (command[0] == "time"):
+                    try:
+                        if (len(command) == 2):
+                            if (command[1] == "s1"):
+                                self.File_Handler(1580082900, 1589950800)
+                                self.calculate_player_stats()
+                            else:
+                                print('"' + command[1] + '" is not a valid season')
+                        elif (len(command) == 3):
+                            if (int(command[1]) >= 0 and int(command[2]) > int(command[1])):
+                                self.File_Handler(int(command[1]), int(command[2]))
+                                self.calculate_player_stats()
+                            else:
+                                print("start_time and end_time must be valid Unix Time integers")
+                        else:
+                            print('Invalid command arguments for "time"')
+                    except:
+                        print("FATAL ERROR: Error while gathering new dataset")
+                        exit(6)
+                elif (command[0] == "boxplot"):
+                    try:
+                        stat_array = []
+                        stat_array = self.get_stat_values(command[1], len(player_final_stats), int(command[2]))
+                        ppl.show(block = False)
+                        fig1, ax1 = ppl.subplots()
+                        ax1.set_title(self.ret_uppercase(command[1]) + " Distribution")
+                        ax1.boxplot(stat_array, vert=False)
+                        ppl.show()
+                    except:
+                        print("""Either invalid or not enough arguments. Usage: plot <stat> <min_games>""")
+                elif (command[0] is "?"):
+                    self.print_help_lists()
                 else:
-                    print("Invalid command arguments for 'time'")
-            elif (command[0] is "?"):
-                print("Commands:")
-                print("exit | exits the program")
-                # print("ranks <len> <min_games> | displays rankings based on Skalla's method")
-                print(
-                    "time <start_time> <end_time> | updates stats with new timeframe, TIMES ARE IN UNIX TIME FORMAT (may fix later)")
-                print("time <season> | same as above, but use 's1' for season 1 data")
-                print("top <stat> <len> <min_games> | displays the top players in a stat. Use 'top ?' for a list of stats")
-            else:
+                    print("""Invalid command. Type "?" for a list of commands""")
+            except:
+                print("WARNING: Exception occurred!")
                 print("""Invalid command. Type "?" for a list of commands""")
+
+    def print_help_lists(self, command = None):
+        if(command is None):
+            print("Commands:")
+            print("boxplot <stat> <min_games> | displays the stats as a boxplot")
+            print("exit | exits the program")
+            # print("ranks <len> <min_games> | displays rankings based on Skalla's method")
+            print("stats | lists the supported stats")
+            print("time <start_time> <end_time> | updates stats with new timeframe, TIMES ARE IN UNIX TIME FORMAT (may fix later)")
+            print("time <season> | same as above, but use 's1' for season 1 data")
+            print("top <stat> <len> <min_games> | displays the top players in a stat. Use 'top ?' for a list of stats")
+
+    def print_stats_list(self):
+        print("Stats currently supported: assists*, deaths*, headshots*, headshot_percentage, KDR, KRR, kills, mvps*, aces*, four_kill_rounds*, three_kill_rounds*")
+        print("""* indicates that you can add "_r" to the stat to get the average per round instead of per game""")
+
 
     def top(self, stat, length, min_games):  # except id rather bottom
         working_array = []
         for e in player_final_stats:
-            if(e.games_played > min_games):
+            if(e.games_played >= min_games):
                 working_array.append(e)
 
         if length < len(working_array):
@@ -108,11 +140,28 @@ class main():
             x += 1
         return return_array
 
+    def get_stat_values(self, stat, length, min_games):  # except id rather bottom
+        working_array = []
+        for e in player_final_stats:
+            if(e.games_played >= min_games):
+                working_array.append(e)
+
+        if length < len(working_array):
+            leng = length
+        else:
+            leng = len(working_array)
+
+        return_array = []
+        for pfs in working_array:
+            return_array.append(self.ret_val_helper(pfs, stat))
+        return return_array
+
 
     def ret_val_helper(self, pfs, stat):
         if(stat == "assists"): return pfs.assists_avg
         elif(stat == "deaths"): return pfs.deaths_avg
         elif (stat == "headshots"): return pfs.headshots_avg
+        elif (stat == "headshot_percentage"): return pfs.headshots_percent_avg
         elif (stat == "KDR"): return pfs.KDR_avg
         elif (stat == "KRR"): return pfs.KRR_avg
         elif (stat == "kills"): return pfs.kills_avg
@@ -133,12 +182,60 @@ class main():
         else:
             return None
 
+    def ret_uppercase(self, stat):
+        if (stat == "assists"):
+            return "Assists"
+        elif (stat == "deaths"):
+            return "Deaths"
+        elif (stat == "headshots"):
+            return "Headshots"
+        elif (stat == "headshot_percentage"):
+            return "Headshot Percentage"
+        elif (stat == "KDR"):
+            return "KDR"
+        elif (stat == "KRR"):
+            return "KRR"
+        elif (stat == "kills"):
+            return "Kills"
+        elif (stat == "mvps"):
+            return "MVPs"
+        elif (stat == "aces"):
+            return "Aces"
+        elif (stat == "four_kill_rounds"):
+            return "Four Kill Rounds"
+        elif (stat == "three_kill_rounds"):
+            return "Three Kill Rounds"
+        elif (stat == "assists_r"):
+            return "Assists per Round"
+        elif (stat == "deaths_r"):
+            return "Deaths per Round"
+        elif (stat == "headshots_r"):
+            return "Headshots per Round"
+        elif (stat == "kills_r"):
+            return "Kills per Round"
+        elif (stat == "mvps_r"):
+            return "MVPs per Round"
+        elif (stat == "aces_r"):
+            return "Aces per Round"
+        elif (stat == "four_kill_rounds_r"):
+            return "Four Kill Rounds per Round"
+        elif (stat == "three_kill_rounds_r"):
+            return "Three Kill Rounds per Round"
+        elif (stat == "games_played"):
+            return "Games Played"
+        elif (stat == "win_rate"):
+            return "Win Rate"
+        else:
+            raise ValueError
+
     def stat_exists(self, stat):
         if (stat == "assists"):
             return True
         elif (stat == "deaths"):
             return
         elif (stat == "headshots"):
+            return True
+        elif (stat == "headshot_percentage"):
             return True
         elif (stat == "KDR"):
             return True
@@ -212,8 +309,8 @@ class main():
                 exit(1)
 
             if (hub_matches_builder["items"] == []):
-                print("WARNING: Items = NULL. Continuing, but these results may be incorrect")
-                print("Note: This usually means your start date was before the hub's creation")
+                #print("WARNING: Items = NULL. Continuing, but these results may be incorrect")
+                #print("Note: This usually means your start date was before the hub's creation")
                 break
             if hub_matches_builder is None and hub_matches == {}:
                 print("FATAL ERROR: data_handler.hub_matches feed is constantly null")
@@ -237,7 +334,8 @@ class main():
                     else:
                         loop = False
 
-        print(str(len(players)) + " players detected in " + str(total_matches) + " matches")
+        print(str(len(players)) + " players detected in " + str(total_matches) + " matches from " + str(start_time)
+              + " to " + str(end_time))
         if (DEBUG): print("*** DEBUG *** | CHUNK_SIZE = " + str(CHUNK_SIZE) + " took " + str(
             time.time() - d_start_time) + " seconds to complete")
 
