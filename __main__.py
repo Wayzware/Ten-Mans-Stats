@@ -1,5 +1,6 @@
-from faceit_data import FaceitData
 import time
+
+from faceit_data import FaceitData
 
 HUB_ID = "9ace3498-5c27-47a4-9d8b-59d10e0a19c5"
 API_KEY = "f09a58a1-40b3-472f-af5d-47fe6e2770fe"
@@ -9,7 +10,7 @@ player_ids = {}
 hub_matches = {}
 player_final_stats = []
 DEBUG = False
-VERSION = "0.1"
+VERSION = "0.1b"
 
 
 class main():
