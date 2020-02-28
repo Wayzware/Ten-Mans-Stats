@@ -1,8 +1,13 @@
 import time
-
+import math
 import matplotlib.pyplot as ppl
 
 from faceit_data import FaceitData
+
+'''
+Ten Man Stats Viewer
+(c) 2020 Jacob Rice
+'''
 
 HUB_ID = "9ace3498-5c27-47a4-9d8b-59d10e0a19c5"
 API_KEY = "f09a58a1-40b3-472f-af5d-47fe6e2770fe"
@@ -12,7 +17,7 @@ player_ids = {}
 hub_matches = {}
 player_final_stats = []
 DEBUG = False
-VERSION = "0.2"
+VERSION = "0.3"
 
 
 class main():
@@ -31,25 +36,29 @@ class main():
         print('Type "?" for a list of commands')
         while (True):
             try:
-                command = input(">>> ").split()
+                command = input(">>> ").lower().split()
                 if (len(command) == 0):
                     print("Please enter a command")
                 elif(command[0] == "top"):
                     if((len(command) == 2) and (command[1] == "?")):
-                        self.print_stats_list()
-                    elif(len(command) == 4 and self.stat_exists(command[1]) and int(command[2]) > 0):
-                        ret_top_array = self.top(command[1], int(command[2]), int(command[3]))
-                        stat = command[1].capitalize()
-                        print(stat + " ranking:")
-                        print("-----------------")
-                        z = 1
-                        for element in ret_top_array:
-                            print(str(z) + ". " + element)
-                            z += 1
+                        print("Flags:")
+                        print("    -v | prints the values of the stats next to the player names")
+                    elif(((len(command) == 4) or (len(command) == 5)) and self.stat_exists(command[1]) and int(command[2]) > 0):
+                        top_players = self.top(command[1], int(command[2]), int(command[3]))
+                        stat_array = []
+                        stat_array = self.get_stat_values(command[1], len(player_final_stats), int(command[3]))
+                        stat_array.sort(reverse=True)
+                        data = [top_players, stat_array]
+                        if ((len(command) == 5) and command[4] == "-v"):
+                            data = [top_players, stat_array]
+                            self.print_ranked_list(data, (self.ret_uppercase(command[1]) + " Ranking: (Names and Values)"), int(command[2]))
+                        else:
+                            data = [top_players]
+                            self.print_ranked_list(data, (self.ret_uppercase(command[1]) + " Ranking: (Names)"), int(command[2]))
                     else:
                         if((len(command) > 1) and not (self.stat_exists(command[1]))):
-                            print('Stat does not exist. Type "top ?" for a list of supported stats')
-                        else: print("Usage: top <stat> <len> <min_games>")
+                            print('Stat does not exist. Type "stats" for a list of supported stats')
+                        else: print("Usage: top <stat> <len> <min_games> [flags]")
                 elif (command[0] == "debug"): #not listed in ? menu
                     if (command[1] == "1"):
                         DEBUG = True
@@ -82,35 +91,175 @@ class main():
                     try:
                         stat_array = []
                         stat_array = self.get_stat_values(command[1], len(player_final_stats), int(command[2]))
-                        ppl.show(block = False)
+                        stat_array.sort(reverse=True)
+
+                        if((len(command) > 3) and ((len(command) - 3) % 2) == 0):
+                            x = 3
+                            while(x < len(command)):
+                                if(x != 3):
+                                    print("")
+                                if(command[x] == "-la"):
+                                    top_players = self.top(command[1], int(command[x + 1]), int(command[2]))
+                                    data = [top_players, stat_array]
+                                    self.print_ranked_list(data, (self.ret_uppercase(command[1]) + " Ranking: (Names and Values)"), int(command[x + 1]))
+                                    x += 2
+                                elif(command[x] == "-ln"):
+                                    top_players = self.top(command[1], int(command[x + 1]), int(command[2]))
+                                    data = [top_players]
+                                    self.print_ranked_list(data, (self.ret_uppercase(command[1]) + " Ranking: (Names)"), int(command[x + 1]))
+                                    x += 2
+                                elif(command[x] == "-lv"):
+                                    data = [stat_array]
+                                    self.print_ranked_list(data, (self.ret_uppercase(command[1]) + " Ranking: (Values)"), int(command[x + 1]))
+                                    x += 2
+                                else:
+                                    raise RuntimeError
+
+                        ppl.show(block=False)
                         fig1, ax1 = ppl.subplots()
-                        ax1.set_title(self.ret_uppercase(command[1]) + " Distribution")
+                        ax1.set_title(self.ret_uppercase(command[1]) + " Distribution (n = " + str(len(stat_array)) + ")")
                         ax1.boxplot(stat_array, vert=False)
                         ppl.show()
                     except:
-                        print("""Either invalid or not enough arguments. Usage: plot <stat> <min_games>""")
-                elif (command[0] is "?"):
+                        print("""An error occurred. Usage: boxplot <stat> <min_games> [flags]""")
+                elif(command[0] == "scatterplot"):
+                    try:
+                        if(command[1] == "?"):
+                            print("Flags coming soon")
+                            #self.print_scatterplot_flags()
+                        else:
+                            x_array = self.get_stat_values(command[1], len(player_final_stats), int(command[3]))
+                            y_array = self.get_stat_values(command[2], len(player_final_stats), int(command[3]))
+
+                            '''INSERT FLAGS HERE'''
+                            '''if ((len(command) > 4) and ((len(command) - 4) % 2) == 0):
+                                x = 4
+                                while (x < len(command)):
+                                    if (x != 4):
+                                        print("")
+                                    if (command[x] == "-la"):
+                                        two_d_list_array = [self.top(command[1], int(command[x + 1]), int(command[3])),]
+                                        x += 2
+                                    elif (command[x] == "-ln"):
+                                        top_players = self.top(command[1], int(command[x + 1]), int(command[2]))
+                                        data = [top_players]
+                                        self.print_ranked_list(data,
+                                                               (self.ret_uppercase(command[1]) + " Ranking: (Names)"),
+                                                               int(command[x + 1]))
+                                        x += 2
+                                    elif (command[x] == "-lv"):
+                                        data = [stat_array]
+                                        self.print_ranked_list(data,
+                                                               (self.ret_uppercase(command[1]) + " Ranking: (Values)"),
+                                                               int(command[x + 1]))
+                                        x += 2
+                                    else:
+                                        raise RuntimeError
+                            '''
+
+
+                            ppl.show(block=False)
+                            fig1, ax1 = ppl.subplots()
+                            ax1.set_title(self.ret_uppercase(command[1]) + " vs " + self.ret_uppercase(command[2]) + " (n = " + str(len(x_array)) + ")")
+                            ax1.scatter(x_array, y_array)
+                            ppl.show()
+
+                    except:
+                        print("""An error occurred. Usage: scatterplot <x_stat> <y_stat> <min_games>""")
+
+
+
+                elif (command[0] == "?"):
                     self.print_help_lists()
+                elif(command[0] == "stats"):
+                    self.print_stats_list()
                 else:
                     print("""Invalid command. Type "?" for a list of commands""")
             except:
+                if(command[0] == "exit"):
+                    exit(0)
                 print("WARNING: Exception occurred!")
                 print("""Invalid command. Type "?" for a list of commands""")
 
     def print_help_lists(self, command = None):
         if(command is None):
             print("Commands:")
-            print("boxplot <stat> <min_games> | displays the stats as a boxplot")
+            print("boxplot <stat> <min_games> [flags]| displays the stats as a boxplot. Use boxplot ? for a list of flags")
             print("exit | exits the program")
             # print("ranks <len> <min_games> | displays rankings based on Skalla's method")
+            print("scatterplot <x_stat> <y_stat> <min_games> | displays the stats given as a scatterplot")
             print("stats | lists the supported stats")
             print("time <start_time> <end_time> | updates stats with new timeframe, TIMES ARE IN UNIX TIME FORMAT (may fix later)")
             print("time <season> | same as above, but use 's1' for season 1 data")
-            print("top <stat> <len> <min_games> | displays the top players in a stat. Use 'top ?' for a list of stats")
+            print("top <stat> <len> <min_games> | displays the top players in a stat. Use 'top ?' for a list of flags")
 
     def print_stats_list(self):
         print("Stats currently supported: assists*, deaths*, headshots*, headshot_percentage, KDR, KRR, kills, mvps*, aces*, four_kill_rounds*, three_kill_rounds*")
         print("""* indicates that you can add "_r" to the stat to get the average per round instead of per game""")
+
+    def print_boxplot_flags(self):
+        print("Flags:")
+        print("    -la <len> | prints both the names and values of the data on the boxplot, up to <len> players/entries")
+        print("    -ln <len> | prints the names of the players on the boxplot, up to <len> players")
+        print("    -lv <len> | prints the numerical values of the data on the boxplot, up to <len> entries")
+
+    def print_scatterplot_flags(self):
+        print("Flags:")
+        print("    -la <len> | prints both the names and (x,y) values of the data on the boxplot, up to <len> players/entries")
+        print("    -ln <len> | prints the names of the players on the boxplot, up to <len> players, ordered by x values")
+        print("    -lv <len> | prints the numerical values of the data on the boxplot, up to <len> entries, ordered by x values")
+
+    def sort_2d_array(self, names, x_array, y_array):
+        length = len(names)
+
+
+    def print_ranked_list(self, data, title, stop_point):
+        columns = len(data) + 1
+        max_width = []
+        max_width.append(int(math.log(len(data[0]))))
+        total_width = max_width[0] + columns + 1
+        for dataset in data:
+            temp_max_width_val = 0
+            for element in dataset:
+                if(len(str(element)) > temp_max_width_val):
+                    temp_max_width_val = len(str(element))
+            max_width.append(temp_max_width_val)
+            total_width += temp_max_width_val
+        if(len(title) > total_width):
+            total_width = len(title)
+
+        x = 0
+        dashes = ""
+        print(title)
+        while (x < total_width):
+            dashes += "-"
+            x += 1
+        print(dashes)
+        x = 1
+        for entry in data[0]:
+            if(x > stop_point):
+                break
+            line = ""
+            z = 0
+            while ((z + len(str(x))) < max_width[0]):
+                line += " "
+                z += 1
+            line += str(x) + "| "
+            y = 1
+            while y < columns:
+                z = 0
+                spaces = ""
+                while ((z + len(str(data[y - 1][x - 1]))) < max_width[y]):
+                    spaces += " "
+                    z += 1
+                line += str(data[y - 1][x - 1]) + spaces +  "| "
+                y += 1
+            line = line[:len(line) - 2]
+            print(line)
+            x += 1
+
+
+
 
 
     def top(self, stat, length, min_games):  # except id rather bottom
@@ -162,15 +311,15 @@ class main():
         elif(stat == "deaths"): return pfs.deaths_avg
         elif (stat == "headshots"): return pfs.headshots_avg
         elif (stat == "headshot_percentage"): return pfs.headshots_percent_avg
-        elif (stat == "KDR"): return pfs.KDR_avg
-        elif (stat == "KRR"): return pfs.KRR_avg
+        elif (stat == "kdr"): return pfs.KDR_avg
+        elif (stat == "krr"): return pfs.KRR_avg
         elif (stat == "kills"): return pfs.kills_avg
         elif (stat == "mvps"): return pfs.mvps_avg
         elif (stat == "aces"): return pfs.aces_avg
         elif (stat == "four_kill_rounds"): return pfs.four_kill_rounds_avg
         elif (stat == "three_kill_rounds"): return pfs.three_kill_rounds_avg
-        elif(stat == "assists_r"): return pfs.assists_avg_r
-        elif(stat == "deaths_r"): return pfs.deaths_avg_r
+        elif (stat == "assists_r"): return pfs.assists_avg_r
+        elif (stat == "deaths_r"): return pfs.deaths_avg_r
         elif (stat == "headshots_r"): return pfs.headshots_avg_r
         elif (stat == "kills_r"): return pfs.kills_avg_r
         elif (stat == "mvps_r"): return pfs.mvps_avg_r
@@ -183,100 +332,60 @@ class main():
             return None
 
     def ret_uppercase(self, stat):
-        if (stat == "assists"):
-            return "Assists"
-        elif (stat == "deaths"):
-            return "Deaths"
-        elif (stat == "headshots"):
-            return "Headshots"
-        elif (stat == "headshot_percentage"):
-            return "Headshot Percentage"
-        elif (stat == "KDR"):
-            return "KDR"
-        elif (stat == "KRR"):
-            return "KRR"
-        elif (stat == "kills"):
-            return "Kills"
-        elif (stat == "mvps"):
-            return "MVPs"
-        elif (stat == "aces"):
-            return "Aces"
-        elif (stat == "four_kill_rounds"):
-            return "Four Kill Rounds"
-        elif (stat == "three_kill_rounds"):
-            return "Three Kill Rounds"
-        elif (stat == "assists_r"):
-            return "Assists per Round"
-        elif (stat == "deaths_r"):
-            return "Deaths per Round"
-        elif (stat == "headshots_r"):
-            return "Headshots per Round"
-        elif (stat == "kills_r"):
-            return "Kills per Round"
-        elif (stat == "mvps_r"):
-            return "MVPs per Round"
-        elif (stat == "aces_r"):
-            return "Aces per Round"
-        elif (stat == "four_kill_rounds_r"):
-            return "Four Kill Rounds per Round"
-        elif (stat == "three_kill_rounds_r"):
-            return "Three Kill Rounds per Round"
-        elif (stat == "games_played"):
-            return "Games Played"
-        elif (stat == "win_rate"):
-            return "Win Rate"
-        else:
-            raise ValueError
+        if (stat == "assists"): return "Assists"
+        elif (stat == "deaths"): return "Deaths"
+        elif (stat == "headshots"): return "Headshots"
+        elif (stat == "headshot_percentage"): return "Headshot Percentage"
+        elif (stat == "kdr"): return "KDR"
+        elif (stat == "krr"): return "KRR"
+        elif (stat == "kills"): return "Kills"
+        elif (stat == "mvps"): return "MVPs"
+        elif (stat == "aces"): return "Aces"
+        elif (stat == "four_kill_rounds"): return "Four Kill Rounds"
+        elif (stat == "three_kill_rounds"): return "Three Kill Rounds"
+        elif (stat == "assists_r"): return "Assists per Round"
+        elif (stat == "deaths_r"): return "Deaths per Round"
+        elif (stat == "headshots_r"): return "Headshots per Round"
+        elif (stat == "kills_r"): return "Kills per Round"
+        elif (stat == "mvps_r"): return "MVPs per Round"
+        elif (stat == "aces_r"): return "Aces per Round"
+        elif (stat == "four_kill_rounds_r"): return "Four Kill Rounds per Round"
+        elif (stat == "three_kill_rounds_r"): return "Three Kill Rounds per Round"
+        elif (stat == "games_played"): return "Games Played"
+        elif (stat == "win_rate"): return "Win Rate"
+        else: raise ValueError
 
     def stat_exists(self, stat):
-        if (stat == "assists"):
-            return True
-        elif (stat == "deaths"):
-            return
-        elif (stat == "headshots"):
-            return True
-        elif (stat == "headshot_percentage"):
-            return True
-        elif (stat == "KDR"):
-            return True
-        elif (stat == "KRR"):
-            return True
-        elif (stat == "kills"):
-            return True
-        elif (stat == "mvps"):
-            return True
-        elif (stat == "aces"):
-            return True
-        elif (stat == "four_kill_rounds"):
-            return True
-        elif (stat == "three_kill_rounds"):
-            return True
-        elif (stat == "assists_r"):
-            return True
-        elif (stat == "deaths_r"):
-            return True
-        elif (stat == "headshots_r"):
-            return True
-        elif (stat == "kills_r"):
-            return True
-        elif (stat == "mvps_r"):
-            return True
-        elif (stat == "aces_r"):
-            return True
-        elif (stat == "four_kill_rounds_r"):
-            return True
-        elif (stat == "three_kill_rounds_r"):
-            return True
-        elif (stat == "games_played"):
-            return True
-        elif (stat == "win_rate"):
-            return True
-        else:
-            return False
+        if (stat == "assists"): return True
+        elif (stat == "deaths"): return True
+        elif (stat == "headshots"): return True
+        elif (stat == "headshot_percentage"): return True
+        elif (stat == "kdr"): return True
+        elif (stat == "krr"): return True
+        elif (stat == "kills"): return True
+        elif (stat == "mvps"): return True
+        elif (stat == "aces"): return True
+        elif (stat == "four_kill_rounds"): return True
+        elif (stat == "three_kill_rounds"): return True
+        elif (stat == "assists_r"): return True
+        elif (stat == "deaths_r"): return True
+        elif (stat == "headshots_r"): return True
+        elif (stat == "kills_r"): return True
+        elif (stat == "mvps_r"): return True
+        elif (stat == "aces_r"): return True
+        elif (stat == "four_kill_rounds_r"): return True
+        elif (stat == "three_kill_rounds_r"): return True
+        elif (stat == "games_played"):  return True
+        elif (stat == "win_rate"): return True
+        else: return False
 
 
     def File_Handler(self, start_time, end_time):
         global CHUNK_SIZE
+        if(start_time == 0):
+            CHUNK_SIZE = 100
+        else:
+            CHUNK_SIZE = 10
         total_matches = 0
         d_start_time = time.time()
         self.HUB_ID = HUB_ID

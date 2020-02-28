@@ -1,0 +1,30 @@
+Upcomming features:
+    -Local cache of data
+    -Addition of eADR to stats
+    -"time" accept stardard human time stamps
+    -Add regression to scatterplot
+    -Addition of more graph labels
+
+Version 0.3:
+    -Added "scatterplot" function
+    -Fixed "exit" function
+    -Improved "boxplot" function
+        -Added flags -la, -ln, -lv
+        -Added n value to title
+    -Improved list/table outputs
+        -Rows are aligned with each other
+    -Improved "top" function
+        -Added flag -v
+
+Version 0.2 (2/26/2020):
+    -Added "boxplot" function
+    -Improved error handling
+    -Improved "?" function
+
+Version 0.1(2/25/2020):
+    -Initial release
+    -Includes the following functions:
+        -"exit" | exits the program (non-functional)
+        -"time <start_time> <end_time>" and "time <season>" | change the dataset to games played during this time period
+            Note: times entered here are in seconds since Jan 1, 1970
+        -"top <stat> <len> <min_games>" | displays the top players in a stat
