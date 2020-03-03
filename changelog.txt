@@ -4,8 +4,23 @@ Upcomming features:
     -"time" accept stardard human time stamps
     -Add regression to scatterplot
     -Addition of more graph labels
+    -Intake multiple commands on one line
 
-Version 0.3:
+Version 0.4 (3/3/2020):
+    -Added multithreading to plot functions
+        -Only 1 plot instance is allowed to run at one time still
+    -Added "time all" to import all data from a hub
+    -Changed "boxplot" to "box_plot" in help menus (Both still work)
+    -Changed "scatterplot" to "scatter_plot" in help menus (Both still work)
+    -Fixed several divide-by-zero errors
+    -Improved "scatter_plot" function
+        -Added flags -la, -ln, -lv, -r
+    -Behind the scenes:
+        -Changed some methods to static
+        -Tested with very large datasets (games = 2000, players = 500)
+
+
+Version 0.3 (2/28/2020):
     -Added "scatterplot" function
     -Fixed "exit" function
     -Improved "boxplot" function
