@@ -2,9 +2,13 @@ Upcomming features:
     -Local cache of data
     -Addition of eADR to stats
     -"time" accept stardard human time stamps
-    -Add regression to scatterplot
     -Addition of more graph labels
-    -Intake multiple commands on one line
+    -Selectable initialization timeframe
+
+Version 0.5 (5/12/2020):
+    -Added "record" function
+        -Returns the highest value for a stat in a single game
+        -Will be expanded upon later
 
 Version 0.4 (3/3/2020):
     -Added multithreading to plot functions

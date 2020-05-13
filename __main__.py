@@ -1,6 +1,6 @@
 # Ten Man Stats Viewer
 # (c) 2020 Jacob "Wayz" Rice
-VERSION = "0.4"
+VERSION = "0.5"
 
 import time
 import math
@@ -27,7 +27,7 @@ class main():
         print("Created by Wayz")
         start_time = 1580082900
         end_time = 1589950800
-        print("Initializing with season 1 data...")  # does this so no null errors occur
+        print("Initializing with season 1 data from UMN 10 Mans...")  # does this so no null errors occur
         self.File_Handler(start_time, end_time)
         self.calculate_player_stats()
         self.take_commands()
@@ -41,6 +41,11 @@ class main():
                 command = input(">>> ").lower().split()
                 if (len(command) == 0):
                     print("Please enter a command")
+                elif (command[0] == "record"):
+                    if(len(command) > 1):
+                        self.get_record(command[1])
+                    else:
+                        print("""Invalid entry. Type "record ?" to get a list of stats""")
                 elif (command[0] == "top"):
                     if ((len(command) == 2) and (command[1] == "?")):
                         print("Flags:")
@@ -234,6 +239,7 @@ class main():
             print("Commands:")
             print("box_plot <stat> <min_games> [flags]| displays the stats as a box plot. Use 'box_plot ?' for a list of flags")
             print("exit | exits the program")
+            print("record <stat> | lists the record high for a stat in a single pug and lists the record holder")
             print("scatter_plot <x_stat> <y_stat> <min_games> | displays the stats given as a scatter plot")
             print("stats | lists the supported stats")
             print("time <start_time> <end_time> | updates stats with new timeframe, TIMES ARE IN UNIX TIME FORMAT (may fix later)")
@@ -409,6 +415,72 @@ class main():
                 return_array2.append(self.ret_val_helper(pfs, stat2))
             return [return_array, return_array2]
 
+    def get_record(self, stat):
+        return_string = ""
+        supported_stats_pug = ["assists", "deaths", "headshots", "headshots_percentage", "kdr", "krr", "kills",
+                               "mvps", "aces", "four_kill_rounds", "three_kill_rounds", "rounds"]
+        if(self.stat_exists_pug(stat)):
+            record = 0.
+            record_holders = []
+            for player_id in players:
+                for match_id in players[player_id]:
+                    player_pug_stats = players[player_id][match_id]
+                    player_pug_stats.calc_stats()
+                    TEST_DEBUG = float(self.get_stat_pug(stat, player_pug_stats))
+                    if(float(self.get_stat_pug(stat, player_pug_stats)) >= record):
+                        record = float(self.get_stat_pug(stat, player_pug_stats))
+                        if(player_id in record_holders):
+                            continue
+                        else:
+                            record_holders.append(player_id)
+            for record_holder in record_holders:
+                return_string += player_ids[record_holder].nickname + ", "
+            return_string = "The record for " + self.ret_uppercase(stat) + " in one game is " + str(record) + ".\n    It is held by: " + \
+                            return_string[:len(return_string) - 2]
+            print(return_string)
+            return
+        elif(stat == "all"):
+            for statistic in supported_stats_pug:
+                self.get_record(statistic)
+        elif(stat == "?"):
+            return_string = "all, "
+            for statistic in supported_stats_pug:
+                return_string += statistic + ", "
+                print("""Supported stats for "record": """ + return_string[:len(return_string) - 2])
+        else:
+            print("This stat does not exist or is not currently supported by this function.")
+
+
+    #yes, I could have implemented these static methods better, but they work and its not worth fixing what isnt broke
+    @staticmethod
+    def get_stat_pug(stat, pps):
+        if (stat == "assists"):
+            return pps.assists
+        elif (stat == "deaths"):
+            return pps.deaths
+        elif (stat == "headshots"):
+            return pps.headshots
+        elif (stat == "headshots_percentage"):
+            return pps.headshots_percentage
+        elif (stat == "kdr"):
+            return pps.kdr
+        elif (stat == "krr"):
+            return pps.krr
+        elif (stat == "kills"):
+            return pps.kills
+        elif (stat == "mvps"):
+            return pps.mvps
+        elif (stat == "aces"):
+            return pps.aces
+        elif (stat == "four_kill_rounds"):
+            return pps.four_kill_rounds
+        elif (stat == "three_kill_rounds"):
+            return pps.three_kill_rounds
+        elif (stat == "rounds"):
+            return pps.rounds
+        else:
+            return None
+
     @staticmethod
     def ret_val_helper(pfs, stat):
         if (stat == "assists"):
@@ -464,7 +536,7 @@ class main():
             return "Deaths"
         elif (stat == "headshots"):
             return "Headshots"
-        elif (stat == "headshot_percentage"):
+        elif (stat == "headshot_percentage" or stat == "headshots_percentage"):
             return "Headshot Percentage"
         elif (stat == "kdr"):
             return "KDR"
@@ -500,6 +572,8 @@ class main():
             return "Games Played"
         elif (stat == "win_rate"):
             return "Win Rate"
+        elif (stat == "rounds"):
+            return "Rounds"
         else:
             raise ValueError
 
@@ -546,6 +620,35 @@ class main():
         elif (stat == "games_played"):
             return True
         elif (stat == "win_rate"):
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def stat_exists_pug(stat):
+        if (stat == "assists"):
+            return True
+        elif (stat == "deaths"):
+            return True
+        elif (stat == "headshots"):
+            return True
+        elif (stat == "headshots_percentage"):
+            return True
+        elif (stat == "kdr"):
+            return True
+        elif (stat == "krr"):
+            return True
+        elif (stat == "kills"):
+            return True
+        elif (stat == "mvps"):
+            return True
+        elif (stat == "aces"):
+            return True
+        elif (stat == "four_kill_rounds"):
+            return True
+        elif (stat == "three_kill_rounds"):
+            return True
+        elif (stat == "rounds"):
             return True
         else:
             return False
@@ -744,6 +847,10 @@ class Player_Pug_Stats():
     three_kill_rounds = 0
     win = 0
 
+    headshots_percentage = 0.0
+    krr = 0.0
+    kdr = 0.0
+
     def __init__(self, assists, deaths, headshots, kills, mvps, aces, four_kill_rounds, rounds, three_kill_rounds, win):
         self.assists = assists
         self.deaths = deaths
@@ -755,6 +862,17 @@ class Player_Pug_Stats():
         self.rounds = rounds
         self.three_kill_rounds = three_kill_rounds
         self.win = win
+        self.calc_stats()
+
+    def calc_stats(self):
+        if(int(self.kills) > 0):
+            self.headshots_percentage = float(self.headshots) / float(self.kills) * 100.0
+        if(int(self.rounds) > 0):
+            self.krr = float(self.kills) / float(self.rounds)
+        if(int(self.deaths) > 0):
+            self.kdr = float(self.kills) / float(self.deaths)
+        else:
+            self.kdr = float(self.kills)
 
 
 class Player_Overall_Stats():
@@ -785,6 +903,5 @@ class Player_Overall_Stats():
     three_kill_rounds_avg_r = 0.
 
     win_rate = 0.
-
 
 if __name__ == '__main__': main()
