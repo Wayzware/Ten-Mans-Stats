@@ -5,6 +5,9 @@ Upcomming features:
     -Addition of more graph labels
     -Selectable initialization timeframe
 
+Version 0.6 TODO: Date:
+    TODO: add stuff here
+
 Version 0.5 (5/12/2020):
     -Added "record" function
         -Returns the highest value for a stat in a single game

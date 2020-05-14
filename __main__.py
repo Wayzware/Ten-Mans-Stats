@@ -12,7 +12,7 @@ from faceit_data import FaceitData
 
 HUB_ID = "9ace3498-5c27-47a4-9d8b-59d10e0a19c5"
 API_KEY = "f09a58a1-40b3-472f-af5d-47fe6e2770fe"
-CHUNK_SIZE = 10  # 10 is probably optimal for most use cases
+CHUNK_SIZE = 100  # 10 is probably optimal for most use cases
 players = {}
 player_ids = {}
 hub_matches = {}
