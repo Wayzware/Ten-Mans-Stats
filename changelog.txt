@@ -5,8 +5,8 @@ Upcomming features:
     -Addition of more graph labels
     -Selectable initialization timeframe
 
-Version 0.6 TODO: Date:
-    TODO: add stuff here
+Version 0.5.1 (5/24/2020):
+    -Added season 2 as an option for time, and made it the default initialization
 
 Version 0.5 (5/12/2020):
     -Added "record" function

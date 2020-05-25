@@ -1,6 +1,6 @@
 # Ten Man Stats Viewer
 # (c) 2020 Jacob "Wayz" Rice
-VERSION = "0.5"
+VERSION = "0.5.1"
 
 import time
 import math
@@ -12,7 +12,7 @@ from faceit_data import FaceitData
 
 HUB_ID = "9ace3498-5c27-47a4-9d8b-59d10e0a19c5"
 API_KEY = "f09a58a1-40b3-472f-af5d-47fe6e2770fe"
-CHUNK_SIZE = 100  # 10 is probably optimal for most use cases
+CHUNK_SIZE = 10  # 10 is probably optimal for most use cases
 players = {}
 player_ids = {}
 hub_matches = {}
@@ -25,9 +25,9 @@ class main():
     def __init__(self):
         print("10 Mans Stats Viewer v" + VERSION)
         print("Created by Wayz")
-        start_time = 1580082900
-        end_time = 1589950800
-        print("Initializing with season 1 data from UMN 10 Mans...")  # does this so no null errors occur
+        start_time = 1589950800
+        end_time = 1599820740
+        print("Initializing with season 2 data from UMN 10 Mans...")  # does this so no null errors occur
         self.File_Handler(start_time, end_time)
         self.calculate_player_stats()
         self.take_commands()
@@ -86,6 +86,8 @@ class main():
                             if (command[1] == "s1"):
                                 self.File_Handler(1580082900, 1589950800)
                                 self.calculate_player_stats()
+                            elif (command[1] == "s2"):
+                                self.File_Handler(1589950800, 1599820740)
                             elif (command[1] == "all"):
                                 self.File_Handler(0, 2**63-1)
                                 self.calculate_player_stats()
@@ -220,8 +222,6 @@ class main():
                     except:
                         print("""An error occurred. Usage: scatter_plot <x_stat> <y_stat> <min_games> [flags]""")
 
-
-
                 elif (command[0] == "?"):
                     self.print_help_lists()
                 elif (command[0] == "stats"):
@@ -239,8 +239,8 @@ class main():
             print("Commands:")
             print("box_plot <stat> <min_games> [flags]| displays the stats as a box plot. Use 'box_plot ?' for a list of flags")
             print("exit | exits the program")
-            print("record <stat> | lists the record high for a stat in a single pug and lists the record holder")
-            print("scatter_plot <x_stat> <y_stat> <min_games> | displays the stats given as a scatter plot")
+            print("record <stat> [flags]| lists the record high for a stat in a single pug and lists the record holder")
+            print("scatter_plot <x_stat> <y_stat> <min_games> [flags]| displays the stats given as a scatter plot")
             print("stats | lists the supported stats")
             print("time <start_time> <end_time> | updates stats with new timeframe, TIMES ARE IN UNIX TIME FORMAT (may fix later)")
             print("time <season> | same as above, but use 's1' for season 1 data")
@@ -702,7 +702,6 @@ class main():
                 exit(1)
 
             hub_matches_builder = hub_matches_builder["items"]
-            y = True
             for match in hub_matches_builder:
                 if (match["finished_at"] > start_time) and (match["finished_at"] < end_time):
                     # if the match is valid to be included in this data set
